@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">scratchpad</string>
+
+    <string name="undo_edit">Undo</string>
+    <string name="redo_edit">Redo</string>
+
+    <string name="take_note_prompt">Take a note</string>
+</resources>
