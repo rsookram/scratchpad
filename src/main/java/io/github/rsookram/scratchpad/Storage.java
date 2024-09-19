@@ -11,11 +11,11 @@ public class Storage {
         this.sharedPreferences = context.getSharedPreferences("note", Context.MODE_PRIVATE);
     }
 
-    public String load() {
-        return sharedPreferences.getString("n", "");
+    public String load(boolean main) {
+        return sharedPreferences.getString(main ? "n" : "n2", "");
     }
 
-    public void save(String value) {
-        sharedPreferences.edit().putString("n", value).apply();
+    public void save(String value, boolean main) {
+        sharedPreferences.edit().putString(main ? "n" : "n2", value).apply();
     }
 }

@@ -24,7 +24,7 @@
         android:fillViewport="true">
 
         <io.github.rsookram.scratchpad.WorkaroundEditText
-            android:id="@+id/text"
+            android:id="@+id/start_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@null"

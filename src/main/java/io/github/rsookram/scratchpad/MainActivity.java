@@ -17,7 +17,8 @@ public class MainActivity extends Activity {
 
     private Storage storage;
     private boolean hasChanged = false;
-    private TextView editor;
+    private TextView startEditor;
+    private TextView endEditor;
 
     private int bottomIgnoreAreaHeight;
 
@@ -29,8 +30,13 @@ public class MainActivity extends Activity {
 
         storage = new Storage(getApplicationContext());
 
-        editor = findViewById(R.id.text);
-        editor.setText(storage.load());
+        startEditor = findViewById(R.id.start_text);
+        startEditor.setText(storage.load(true));
+
+        endEditor = findViewById(R.id.end_text);
+        if (endEditor != null) {
+            endEditor.setText(storage.load(false));
+        }
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.toolbar);
@@ -42,7 +48,7 @@ public class MainActivity extends Activity {
                         0, 0, KeyEvent.ACTION_DOWN,
                         KeyEvent.KEYCODE_Z, 0, KeyEvent.META_CTRL_ON
                 );
-                editor.onKeyShortcut(e.getKeyCode(), e);
+                (endEditor != null && endEditor.hasFocus() ? endEditor : startEditor).onKeyShortcut(e.getKeyCode(), e);
                 hasChanged = true;
                 return true;
             }
@@ -53,7 +59,7 @@ public class MainActivity extends Activity {
                         0, 0, KeyEvent.ACTION_DOWN,
                         KeyEvent.KEYCODE_Z, 0, KeyEvent.META_CTRL_ON | KeyEvent.META_SHIFT_ON
                 );
-                editor.onKeyShortcut(e.getKeyCode(), e);
+                (endEditor != null && endEditor.hasFocus() ? endEditor : startEditor).onKeyShortcut(e.getKeyCode(), e);
                 hasChanged = true;
                 return true;
             }
@@ -61,9 +67,12 @@ public class MainActivity extends Activity {
             return false;
         });
 
-        editor.setFilters(new InputFilter[]{new RemoveFormattingFilter()});
+        startEditor.setFilters(new InputFilter[]{new RemoveFormattingFilter()});
+        if (endEditor != null) {
+            endEditor.setFilters(new InputFilter[]{new RemoveFormattingFilter()});
+        }
 
-        editor.addTextChangedListener(new TextWatcher() {
+        TextWatcher textWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -76,9 +85,13 @@ public class MainActivity extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
             }
-        });
+        };
+        startEditor.addTextChangedListener(textWatcher);
+        if (endEditor != null) {
+            endEditor.addTextChangedListener(textWatcher);
+        }
 
-        applySystemUiVisibility(toolbar, editor);
+        applySystemUiVisibility(toolbar, startEditor, endEditor);
 
         findViewById(android.R.id.content).setOnApplyWindowInsetsListener((v, insets) -> {
             bottomIgnoreAreaHeight = insets.getInsets(WindowInsets.Type.systemBars()).bottom;
@@ -87,7 +100,7 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void applySystemUiVisibility(View toolbar, View content) {
+    private void applySystemUiVisibility(View toolbar, View... contents) {
         getWindow().setDecorFitsSystemWindows(false);
 
         toolbar.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -97,18 +110,24 @@ public class MainActivity extends Activity {
             return insets;
         });
 
-        content.setOnApplyWindowInsetsListener((v, insets) -> {
-            int padding = getResources().getDimensionPixelSize(R.dimen.content_padding);
-            Insets systemInsets = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
-            v.setPadding(
-                    padding + systemInsets.left,
-                    padding,
-                    padding + systemInsets.right,
-                    padding + systemInsets.bottom
-            );
+        for (View content : contents) {
+            if (content == null) {
+                continue;
+            }
 
-            return insets;
-        });
+            content.setOnApplyWindowInsetsListener((v, insets) -> {
+                int padding = getResources().getDimensionPixelSize(R.dimen.content_padding);
+                Insets systemInsets = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
+                v.setPadding(
+                        padding + systemInsets.left,
+                        padding,
+                        padding + systemInsets.right,
+                        padding + systemInsets.bottom
+                );
+
+                return insets;
+            });
+        }
     }
 
     @Override
@@ -116,11 +135,17 @@ public class MainActivity extends Activity {
         super.onPause();
 
         if (hasChanged) {
-            storage.save(editor.getText().toString());
+            storage.save(startEditor.getText().toString(), true);
+            if (endEditor != null) {
+                storage.save(endEditor.getText().toString(), false);
+            }
             hasChanged = false;
         }
 
-        editor.clearFocus();
+        startEditor.clearFocus();
+        if (endEditor != null) {
+            endEditor.clearFocus();
+        }
     }
 
     @Override
